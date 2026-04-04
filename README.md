@@ -260,3 +260,7 @@ make test
 - Admin authorization is supported at the domain/use-case level and exposed through dedicated admin routes.
 - The in-memory unit of work uses snapshotting so transaction-oriented use cases behave consistently in tests and local demos.
 - The PostgreSQL repositories are intentionally explicit rather than using an ORM to keep the boundary between domain and infrastructure visible.
+
+## License
+
+MIT. See [LICENSE](./LICENSE).
