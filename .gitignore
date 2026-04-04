@@ -1,0 +1,9 @@
+.env
+.idea/
+
+bin/
+dist/
+tmp/
+coverage.out
+*.test
+.DS_Store

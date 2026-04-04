@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Blog API Docs</title>
+    <style>
+      :root {
+        --bg: #f4f1ea;
+        --panel: #fffdf8;
+        --ink: #1f2937;
+        --muted: #6b7280;
+        --line: #ddd6c8;
+        --accent: #0f766e;
+        --accent-soft: #ccfbf1;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top right, #d1fae5 0, transparent 28%),
+          linear-gradient(180deg, #f7f3eb 0%, var(--bg) 100%);
+      }
+
+      .shell {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 32px 20px 48px;
+      }
+
+      .hero {
+        display: grid;
+        gap: 20px;
+        margin-bottom: 28px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        width: fit-content;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2rem, 5vw, 3.75rem);
+        line-height: 0.95;
+      }
+
+      .lead {
+        max-width: 760px;
+        margin: 0;
+        color: var(--muted);
+        font-size: 18px;
+        line-height: 1.6;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 0 16px;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--ink);
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .button.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .card {
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: rgba(255, 253, 248, 0.92);
+        backdrop-filter: blur(8px);
+      }
+
+      .card h2 {
+        margin: 0 0 10px;
+        font-size: 18px;
+      }
+
+      .card p,
+      .card li {
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .card ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+
+      .panel {
+        margin-top: 24px;
+        padding: 20px;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: var(--panel);
+      }
+
+      .panel h2 {
+        margin-top: 0;
+      }
+
+      pre {
+        margin: 0;
+        padding: 16px;
+        overflow: auto;
+        border-radius: 16px;
+        background: #111827;
+        color: #e5e7eb;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .status {
+        margin-bottom: 12px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      @media (max-width: 640px) {
+        .shell {
+          padding-inline: 14px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <section class="hero">
+        <span class="eyebrow">Starter Kit Docs</span>
+        <h1>Blog API Reference</h1>
+        <p class="lead">
+          Offline-friendly documentation for the Clean Architecture starter kit.
+          This page does not depend on external CDNs, so it still works when the server has no internet access.
+        </p>
+        <div class="actions">
+          <a class="button primary" href="/openapi.yaml" target="_blank" rel="noreferrer">Open Raw OpenAPI</a>
+          <a class="button" href="/health/live" target="_blank" rel="noreferrer">Health Check</a>
+          <a class="button" href="/metrics" target="_blank" rel="noreferrer">Metrics</a>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article class="card">
+          <h2>Authentication</h2>
+          <ul>
+            <li><code>POST /api/v1/auth/register</code></li>
+            <li><code>POST /api/v1/auth/login</code></li>
+            <li><code>POST /api/v1/auth/refresh</code></li>
+            <li><code>POST /api/v1/auth/logout</code></li>
+            <li><code>POST /api/v1/auth/logout-all</code></li>
+            <li><code>GET /api/v1/auth/sessions</code></li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <h2>Content</h2>
+          <ul>
+            <li><code>GET /api/v1/posts</code></li>
+            <li><code>POST /api/v1/posts</code></li>
+            <li><code>PUT /api/v1/posts/:postID</code></li>
+            <li><code>POST /api/v1/posts/:postID/comments</code></li>
+            <li><code>POST /api/v1/posts/:postID/likes</code></li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <h2>Admin</h2>
+          <ul>
+            <li><code>GET /api/v1/admin/users</code></li>
+            <li><code>PUT /api/v1/admin/users/:userID/role</code></li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="panel">
+        <h2>OpenAPI Spec</h2>
+        <p class="status" id="status">Loading <code>/openapi.yaml</code>...</p>
+        <pre id="spec">Loading...</pre>
+      </section>
+    </div>
+
+    <script>
+      (async function () {
+        const status = document.getElementById("status");
+        const spec = document.getElementById("spec");
+
+        try {
+          const response = await fetch("/openapi.yaml", { cache: "no-store" });
+          if (!response.ok) {
+            throw new Error("HTTP " + response.status);
+          }
+          spec.textContent = await response.text();
+          status.textContent = "Loaded /openapi.yaml";
+        } catch (error) {
+          status.textContent = "Failed to load /openapi.yaml";
+          spec.textContent = String(error);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-and-lint:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: blog
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d blog"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Download modules
+        run: go mod download
+
+      - name: Format check
+        run: |
+          test -z "$(gofmt -l $(find cmd internal -name '*.go' -print))"
+
+      - name: Run unit and default integration tests
+        run: go test ./...
+
+      - name: Run PostgreSQL-backed integration tests
+        env:
+          TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/blog?sslmode=disable
+        run: go test ./... -run Postgres
+
+      - name: Setup golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.64.8
+          args: --timeout=5m
