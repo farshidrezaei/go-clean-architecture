@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"clean_architecture/internal/interface/http/port"
 	"github.com/gin-gonic/gin"
 )
 
@@ -25,16 +26,21 @@ func NewMetrics() *Metrics {
 	}
 }
 
-func (m *Metrics) Middleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func (m *Metrics) Middleware() port.MiddlewareFunc {
+	return func(ctx port.Context) {
 		start := time.Now()
-		c.Next()
+		ctx.Next()
 
-		route := c.FullPath()
+		route := ctx.Route()
 		if route == "" {
 			route = "unmatched"
 		}
-		key := labelsKey(c.Request.Method, route, strconv.Itoa(c.Writer.Status()))
+		status := ctx.ResponseStatus()
+		if status == 0 {
+			status = http.StatusOK
+		}
+		key := labelsKey(ctx.Request().Method, route, strconv.Itoa(status))
+
 		m.mu.Lock()
 		m.requests[key]++
 		m.latency[key] += time.Since(start).Seconds()

@@ -3,8 +3,8 @@ package common
 import (
 	"net/http"
 
+	"clean_architecture/internal/interface/http/port"
 	"clean_architecture/internal/usecase/shared"
-	"github.com/gin-gonic/gin"
 )
 
 const (
@@ -14,43 +14,43 @@ const (
 	ContextRequestIDKey = "requestID"
 )
 
-func UserID(c *gin.Context) string {
-	return c.GetString(ContextUserIDKey)
+func UserID(ctx port.Context) string {
+	return ctx.GetString(ContextUserIDKey)
 }
 
-func UserRole(c *gin.Context) string {
-	return c.GetString(ContextUserRoleKey)
+func UserRole(ctx port.Context) string {
+	return ctx.GetString(ContextUserRoleKey)
 }
 
-func Error(c *gin.Context, err error) {
-	c.JSON(shared.HTTPStatus(err), gin.H{
-		"error": gin.H{
+func Error(ctx port.Context, err error) {
+	ctx.JSON(shared.HTTPStatus(err), map[string]any{
+		"error": map[string]any{
 			"code":       shared.Code(err),
 			"message":    shared.SafeMessage(err),
-			"request_id": c.GetString(ContextRequestIDKey),
+			"request_id": ctx.GetString(ContextRequestIDKey),
 		},
 	})
 }
 
-func ValidationError(c *gin.Context, message string, details any) {
-	c.JSON(http.StatusBadRequest, gin.H{
-		"error": gin.H{
+func ValidationError(ctx port.Context, message string, details any) {
+	ctx.JSON(http.StatusBadRequest, map[string]any{
+		"error": map[string]any{
 			"code":       "validation_error",
 			"message":    message,
 			"details":    details,
-			"request_id": c.GetString(ContextRequestIDKey),
+			"request_id": ctx.GetString(ContextRequestIDKey),
 		},
 	})
 }
 
-func Created(c *gin.Context, payload any) {
-	c.JSON(http.StatusCreated, payload)
+func Created(ctx port.Context, payload any) {
+	ctx.JSON(http.StatusCreated, payload)
 }
 
-func OK(c *gin.Context, payload any) {
-	c.JSON(http.StatusOK, payload)
+func OK(ctx port.Context, payload any) {
+	ctx.JSON(http.StatusOK, payload)
 }
 
-func NoContent(c *gin.Context) {
-	c.Status(http.StatusNoContent)
+func NoContent(ctx port.Context) {
+	ctx.Status(http.StatusNoContent)
 }

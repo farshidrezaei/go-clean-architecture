@@ -1,43 +1,42 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
 	"time"
 
 	"clean_architecture/internal/infrastructure/ratelimit"
 	"clean_architecture/internal/interface/http/common"
-	"github.com/gin-gonic/gin"
+	"clean_architecture/internal/interface/http/port"
 )
 
-func LoginRateLimit(service ratelimit.Service) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		key := c.ClientIP() + ":login"
-		allowed, err := service.Allow(context.Background(), key, 5, time.Minute)
+func LoginRateLimit(service ratelimit.Service) port.MiddlewareFunc {
+	return func(ctx port.Context) {
+		key := ctx.ClientIP() + ":login"
+		allowed, err := service.Allow(ctx.Context(), key, 5, time.Minute)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "internal_error", "message": "rate limiter failed", "request_id": c.GetString(common.ContextRequestIDKey)}})
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, map[string]any{"error": map[string]any{"code": "internal_error", "message": "rate limiter failed", "request_id": ctx.GetString(common.ContextRequestIDKey)}})
 			return
 		}
 		if !allowed {
-			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"error": gin.H{"code": "rate_limited", "message": "too many login attempts", "request_id": c.GetString(common.ContextRequestIDKey)}})
+			ctx.AbortWithStatusJSON(http.StatusTooManyRequests, map[string]any{"error": map[string]any{"code": "rate_limited", "message": "too many login attempts", "request_id": ctx.GetString(common.ContextRequestIDKey)}})
 			return
 		}
-		c.Next()
+		ctx.Next()
 	}
 }
 
-func RefreshRateLimit(service ratelimit.Service) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		key := c.ClientIP() + ":refresh"
-		allowed, err := service.Allow(context.Background(), key, 10, time.Minute)
+func RefreshRateLimit(service ratelimit.Service) port.MiddlewareFunc {
+	return func(ctx port.Context) {
+		key := ctx.ClientIP() + ":refresh"
+		allowed, err := service.Allow(ctx.Context(), key, 10, time.Minute)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "internal_error", "message": "rate limiter failed", "request_id": c.GetString(common.ContextRequestIDKey)}})
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, map[string]any{"error": map[string]any{"code": "internal_error", "message": "rate limiter failed", "request_id": ctx.GetString(common.ContextRequestIDKey)}})
 			return
 		}
 		if !allowed {
-			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"error": gin.H{"code": "rate_limited", "message": "too many refresh attempts", "request_id": c.GetString(common.ContextRequestIDKey)}})
+			ctx.AbortWithStatusJSON(http.StatusTooManyRequests, map[string]any{"error": map[string]any{"code": "rate_limited", "message": "too many refresh attempts", "request_id": ctx.GetString(common.ContextRequestIDKey)}})
 			return
 		}
-		c.Next()
+		ctx.Next()
 	}
 }

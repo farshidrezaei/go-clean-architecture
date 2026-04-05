@@ -20,6 +20,7 @@ import (
 	pgrepo "clean_architecture/internal/infrastructure/repository/postgres"
 	"clean_architecture/internal/infrastructure/telemetry"
 	delivery "clean_architecture/internal/interface/http"
+	ginadapter "clean_architecture/internal/interface/http/adapter/gin"
 	"clean_architecture/internal/interface/http/handlers"
 	httpmiddleware "clean_architecture/internal/interface/http/middleware"
 	adminuc "clean_architecture/internal/usecase/admin"
@@ -114,7 +115,8 @@ func main() {
 		AuthMiddleware:   delivery.NewAuthMiddleware(jwtService),
 		LoginRateLimit:   httpmiddleware.LoginRateLimit(storeBundle.rateLimiter),
 		RefreshRateLimit: httpmiddleware.RefreshRateLimit(storeBundle.rateLimiter),
-		Logger:           log,
+		RequestContext:   ginadapter.RequestContext(log),
+		RequestLogger:    ginadapter.RequestLogger(log),
 		HealthChecker:    storeBundle.healthChecker,
 		Metrics:          metrics.Middleware(),
 		MetricsHandler:   metrics.Handler(),

@@ -16,6 +16,7 @@ import (
 	"clean_architecture/internal/infrastructure/logger"
 	pgrepo "clean_architecture/internal/infrastructure/repository/postgres"
 	delivery "clean_architecture/internal/interface/http"
+	ginadapter "clean_architecture/internal/interface/http/adapter/gin"
 	"clean_architecture/internal/interface/http/handlers"
 	httpmiddleware "clean_architecture/internal/interface/http/middleware"
 	commentuc "clean_architecture/internal/usecase/comment"
@@ -83,7 +84,8 @@ func TestPostgresAuthAndPostFlow(t *testing.T) {
 		PostHandler:    handlers.NewPostHandler(createPost, updatePost, deletePost, likePost, getPost, listPosts),
 		CommentHandler: handlers.NewCommentHandler(addComment, updateComment, deleteComment, listComments),
 		AuthMiddleware: delivery.NewAuthMiddleware(jwtService),
-		Logger:         logger.New("development", "INFO"),
+		RequestContext: ginadapter.RequestContext(logger.New("development", "INFO")),
+		RequestLogger:  ginadapter.RequestLogger(logger.New("development", "INFO")),
 		HealthChecker:  health.NewPostgresChecker(pool),
 		Metrics:        metrics.Middleware(),
 		MetricsHandler: metrics.Handler(),

@@ -5,31 +5,31 @@ import (
 	"strings"
 
 	"clean_architecture/internal/interface/http/common"
-	"github.com/gin-gonic/gin"
+	"clean_architecture/internal/interface/http/port"
 )
 
 type Authenticator interface {
 	ValidateToken(tokenString string) (subject string, email string, role string, err error)
 }
 
-func RequireAuth(tokens Authenticator) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		header := c.GetHeader("Authorization")
+func RequireAuth(tokens Authenticator) port.MiddlewareFunc {
+	return func(ctx port.Context) {
+		header := ctx.Header("Authorization")
 		if !strings.HasPrefix(header, "Bearer ") {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": gin.H{"code": "unauthorized", "message": "missing bearer token", "request_id": c.GetString(common.ContextRequestIDKey)}})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, map[string]any{"error": map[string]any{"code": "unauthorized", "message": "missing bearer token", "request_id": ctx.GetString(common.ContextRequestIDKey)}})
 			return
 		}
 
 		rawToken := strings.TrimPrefix(header, "Bearer ")
 		subject, email, role, err := tokens.ValidateToken(rawToken)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": gin.H{"code": "unauthorized", "message": "invalid token", "request_id": c.GetString(common.ContextRequestIDKey)}})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, map[string]any{"error": map[string]any{"code": "unauthorized", "message": "invalid token", "request_id": ctx.GetString(common.ContextRequestIDKey)}})
 			return
 		}
 
-		c.Set(common.ContextUserIDKey, subject)
-		c.Set(common.ContextUserEmailKey, email)
-		c.Set(common.ContextUserRoleKey, role)
-		c.Next()
+		ctx.Set(common.ContextUserIDKey, subject)
+		ctx.Set(common.ContextUserEmailKey, email)
+		ctx.Set(common.ContextUserRoleKey, role)
+		ctx.Next()
 	}
 }

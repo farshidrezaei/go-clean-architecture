@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"clean_architecture/internal/interface/http/common"
-	"github.com/gin-gonic/gin"
+	"clean_architecture/internal/interface/http/port"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -13,43 +13,44 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func Tracing(serviceName string) gin.HandlerFunc {
+func Tracing(serviceName string) port.MiddlewareFunc {
 	tracer := otel.Tracer(serviceName)
 	propagator := otel.GetTextMapPropagator()
 
-	return func(c *gin.Context) {
-		ctx := propagator.Extract(c.Request.Context(), propagation.HeaderCarrier(c.Request.Header))
-		spanName := c.Request.Method + " " + c.FullPath()
-		if c.FullPath() == "" {
-			spanName = c.Request.Method + " " + c.Request.URL.Path
+	return func(ctx port.Context) {
+		req := ctx.Request()
+		spanName := req.Method + " " + ctx.Route()
+		if spanName == req.Method+" " {
+			spanName = req.Method + " " + req.URL.Path
 		}
 
-		ctx, span := tracer.Start(ctx, spanName, trace.WithSpanKind(trace.SpanKindServer))
+		reqCtx := propagator.Extract(req.Context(), propagation.HeaderCarrier(req.Header.Clone()))
+		ctxReq, span := tracer.Start(reqCtx, spanName, trace.WithSpanKind(trace.SpanKindServer))
 		defer span.End()
 
-		c.Request = c.Request.WithContext(ctx)
-		c.Next()
+		ctx.SetRequest(req.WithContext(ctxReq))
+		ctx.Next()
 
 		span.SetAttributes(
-			semconv.HTTPRequestMethodKey.String(c.Request.Method),
-			semconv.URLPath(c.Request.URL.Path),
-			attribute.Int("http.response.status_code", c.Writer.Status()),
+			semconv.HTTPRequestMethodKey.String(req.Method),
+			semconv.URLPath(req.URL.Path),
+			attribute.Int("http.response.status_code", ctx.ResponseStatus()),
 		)
-		if route := c.FullPath(); route != "" {
+		if route := ctx.Route(); route != "" {
 			span.SetAttributes(attribute.String("http.route", route))
 		}
-		if requestID := c.GetString(common.ContextRequestIDKey); requestID != "" {
+		if requestID := ctx.GetString(common.ContextRequestIDKey); requestID != "" {
 			span.SetAttributes(attribute.String("http.request_id", requestID))
 		}
-		if userID := c.GetString(common.ContextUserIDKey); userID != "" {
+		if userID := ctx.GetString(common.ContextUserIDKey); userID != "" {
 			span.SetAttributes(attribute.String("enduser.id", userID))
 		}
-		if len(c.Errors) > 0 {
-			span.RecordError(errors.New(c.Errors.String()))
-			span.SetStatus(codes.Error, c.Errors.String())
+		if errs := ctx.Errors(); errs != "" {
+			span.RecordError(errors.New(errs))
+			span.SetStatus(codes.Error, errs)
 			return
 		}
-		if c.Writer.Status() >= 500 {
+		if ctx.ResponseStatus() >= 500 {
 			span.SetStatus(codes.Error, "server error")
 			return
 		}

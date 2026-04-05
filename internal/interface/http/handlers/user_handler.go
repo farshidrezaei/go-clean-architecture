@@ -3,8 +3,8 @@ package handlers
 import (
 	"clean_architecture/internal/interface/dto"
 	"clean_architecture/internal/interface/http/common"
+	"clean_architecture/internal/interface/http/port"
 	"clean_architecture/internal/usecase/user"
-	"github.com/gin-gonic/gin"
 )
 
 type UserHandler struct {
@@ -21,120 +21,120 @@ func NewUserHandler(register *user.RegisterUser, login *user.LoginUser, refresh 
 	return &UserHandler{register: register, login: login, refresh: refresh, logout: logout, logoutAll: logoutAll, listSessions: listSessions, revokeSession: revokeSession}
 }
 
-func (h *UserHandler) Register(c *gin.Context) {
+func (h *UserHandler) Register(ctx port.Context) {
 	var req dto.RegisterUserRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		common.ValidationError(c, "request payload is invalid", err.Error())
+	if err := ctx.BindJSON(&req); err != nil {
+		common.ValidationError(ctx, "request payload is invalid", err.Error())
 		return
 	}
 
-	userEntity, err := h.register.Execute(c.Request.Context(), user.RegisterUserInput{
+	userEntity, err := h.register.Execute(ctx.Context(), user.RegisterUserInput{
 		Name:     req.Name,
 		Email:    req.Email,
 		Password: req.Password,
 	})
 	if err != nil {
-		common.Error(c, err)
+		common.Error(ctx, err)
 		return
 	}
 
-	common.Created(c, dto.ToUserResponse(userEntity))
+	common.Created(ctx, dto.ToUserResponse(userEntity))
 }
 
-func (h *UserHandler) Login(c *gin.Context) {
+func (h *UserHandler) Login(ctx port.Context) {
 	var req dto.LoginUserRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		common.ValidationError(c, "request payload is invalid", err.Error())
+	if err := ctx.BindJSON(&req); err != nil {
+		common.ValidationError(ctx, "request payload is invalid", err.Error())
 		return
 	}
 
-	result, err := h.login.Execute(c.Request.Context(), user.LoginUserInput{
+	result, err := h.login.Execute(ctx.Context(), user.LoginUserInput{
 		Email:      req.Email,
 		Password:   req.Password,
 		DeviceName: req.DeviceName,
-		UserAgent:  c.Request.UserAgent(),
-		IPAddress:  c.ClientIP(),
+		UserAgent:  ctx.Request().UserAgent(),
+		IPAddress:  ctx.ClientIP(),
 	})
 	if err != nil {
-		common.Error(c, err)
+		common.Error(ctx, err)
 		return
 	}
 
-	common.OK(c, dto.AuthResponse{
+	common.OK(ctx, dto.AuthResponse{
 		User:         dto.ToUserResponse(result.User),
 		AccessToken:  result.AccessToken,
 		RefreshToken: result.RefreshToken,
 	})
 }
 
-func (h *UserHandler) Refresh(c *gin.Context) {
+func (h *UserHandler) Refresh(ctx port.Context) {
 	var req dto.RefreshTokenRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		common.ValidationError(c, "request payload is invalid", err.Error())
+	if err := ctx.BindJSON(&req); err != nil {
+		common.ValidationError(ctx, "request payload is invalid", err.Error())
 		return
 	}
 
-	result, err := h.refresh.Execute(c.Request.Context(), user.RefreshSessionInput{
+	result, err := h.refresh.Execute(ctx.Context(), user.RefreshSessionInput{
 		RefreshToken: req.RefreshToken,
 	})
 	if err != nil {
-		common.Error(c, err)
+		common.Error(ctx, err)
 		return
 	}
 
-	common.OK(c, dto.AuthResponse{
+	common.OK(ctx, dto.AuthResponse{
 		User:         dto.ToUserResponse(result.User),
 		AccessToken:  result.AccessToken,
 		RefreshToken: result.RefreshToken,
 	})
 }
 
-func (h *UserHandler) Logout(c *gin.Context) {
+func (h *UserHandler) Logout(ctx port.Context) {
 	var req dto.RefreshTokenRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		common.ValidationError(c, "request payload is invalid", err.Error())
+	if err := ctx.BindJSON(&req); err != nil {
+		common.ValidationError(ctx, "request payload is invalid", err.Error())
 		return
 	}
-	if err := h.logout.Execute(c.Request.Context(), user.LogoutSessionInput{RefreshToken: req.RefreshToken}); err != nil {
-		common.Error(c, err)
+	if err := h.logout.Execute(ctx.Context(), user.LogoutSessionInput{RefreshToken: req.RefreshToken}); err != nil {
+		common.Error(ctx, err)
 		return
 	}
-	common.NoContent(c)
+	common.NoContent(ctx)
 }
 
-func (h *UserHandler) LogoutAll(c *gin.Context) {
-	if err := h.logoutAll.Execute(c.Request.Context(), user.LogoutAllSessionsInput{UserID: common.UserID(c)}); err != nil {
-		common.Error(c, err)
+func (h *UserHandler) LogoutAll(ctx port.Context) {
+	if err := h.logoutAll.Execute(ctx.Context(), user.LogoutAllSessionsInput{UserID: common.UserID(ctx)}); err != nil {
+		common.Error(ctx, err)
 		return
 	}
-	common.NoContent(c)
+	common.NoContent(ctx)
 }
 
-func (h *UserHandler) ListSessions(c *gin.Context) {
-	items, err := h.listSessions.Execute(c.Request.Context(), user.ListSessionsInput{UserID: common.UserID(c)})
+func (h *UserHandler) ListSessions(ctx port.Context) {
+	items, err := h.listSessions.Execute(ctx.Context(), user.ListSessionsInput{UserID: common.UserID(ctx)})
 	if err != nil {
-		common.Error(c, err)
+		common.Error(ctx, err)
 		return
 	}
 	response := make([]dto.SessionResponse, 0, len(items))
 	for _, item := range items {
 		response = append(response, dto.ToSessionResponse(item))
 	}
-	common.OK(c, response)
+	common.OK(ctx, response)
 }
 
-func (h *UserHandler) RevokeSession(c *gin.Context) {
+func (h *UserHandler) RevokeSession(ctx port.Context) {
 	var req dto.RevokeSessionRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		common.ValidationError(c, "request payload is invalid", err.Error())
+	if err := ctx.BindJSON(&req); err != nil {
+		common.ValidationError(ctx, "request payload is invalid", err.Error())
 		return
 	}
-	if err := h.revokeSession.Execute(c.Request.Context(), user.RevokeSessionInput{
-		UserID:    common.UserID(c),
+	if err := h.revokeSession.Execute(ctx.Context(), user.RevokeSessionInput{
+		UserID:    common.UserID(ctx),
 		SessionID: req.SessionID,
 	}); err != nil {
-		common.Error(c, err)
+		common.Error(ctx, err)
 		return
 	}
-	common.NoContent(c)
+	common.NoContent(ctx)
 }

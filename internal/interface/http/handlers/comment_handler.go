@@ -5,8 +5,8 @@ import (
 
 	"clean_architecture/internal/interface/dto"
 	"clean_architecture/internal/interface/http/common"
+	"clean_architecture/internal/interface/http/port"
 	"clean_architecture/internal/usecase/comment"
-	"github.com/gin-gonic/gin"
 )
 
 type CommentHandler struct {
@@ -20,71 +20,71 @@ func NewCommentHandler(add *comment.AddComment, update *comment.UpdateComment, d
 	return &CommentHandler{add: add, update: update, delete: deleteUC, list: list}
 }
 
-func (h *CommentHandler) Add(c *gin.Context) {
+func (h *CommentHandler) Add(ctx port.Context) {
 	var req dto.AddCommentRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		common.ValidationError(c, "request payload is invalid", err.Error())
+	if err := ctx.BindJSON(&req); err != nil {
+		common.ValidationError(ctx, "request payload is invalid", err.Error())
 		return
 	}
 
-	commentEntity, err := h.add.Execute(c.Request.Context(), comment.AddCommentInput{
-		PostID:  c.Param("postID"),
-		ActorID: common.UserID(c),
+	commentEntity, err := h.add.Execute(ctx.Context(), comment.AddCommentInput{
+		PostID:  ctx.Param("postID"),
+		ActorID: common.UserID(ctx),
 		Body:    req.Body,
 	})
 	if err != nil {
-		common.Error(c, err)
+		common.Error(ctx, err)
 		return
 	}
 
-	common.Created(c, dto.ToCommentResponse(commentEntity))
+	common.Created(ctx, dto.ToCommentResponse(commentEntity))
 }
 
-func (h *CommentHandler) Update(c *gin.Context) {
+func (h *CommentHandler) Update(ctx port.Context) {
 	var req dto.UpdateCommentRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		common.ValidationError(c, "request payload is invalid", err.Error())
+	if err := ctx.BindJSON(&req); err != nil {
+		common.ValidationError(ctx, "request payload is invalid", err.Error())
 		return
 	}
 
-	commentEntity, err := h.update.Execute(c.Request.Context(), comment.UpdateCommentInput{
-		CommentID: c.Param("commentID"),
-		ActorID:   common.UserID(c),
-		ActorRole: common.UserRole(c),
+	commentEntity, err := h.update.Execute(ctx.Context(), comment.UpdateCommentInput{
+		CommentID: ctx.Param("commentID"),
+		ActorID:   common.UserID(ctx),
+		ActorRole: common.UserRole(ctx),
 		Body:      req.Body,
 	})
 	if err != nil {
-		common.Error(c, err)
+		common.Error(ctx, err)
 		return
 	}
 
-	common.OK(c, dto.ToCommentResponse(commentEntity))
+	common.OK(ctx, dto.ToCommentResponse(commentEntity))
 }
 
-func (h *CommentHandler) Delete(c *gin.Context) {
-	if err := h.delete.Execute(c.Request.Context(), comment.DeleteCommentInput{
-		CommentID: c.Param("commentID"),
-		ActorID:   common.UserID(c),
-		ActorRole: common.UserRole(c),
+func (h *CommentHandler) Delete(ctx port.Context) {
+	if err := h.delete.Execute(ctx.Context(), comment.DeleteCommentInput{
+		CommentID: ctx.Param("commentID"),
+		ActorID:   common.UserID(ctx),
+		ActorRole: common.UserRole(ctx),
 	}); err != nil {
-		common.Error(c, err)
+		common.Error(ctx, err)
 		return
 	}
 
-	common.NoContent(c)
+	common.NoContent(ctx)
 }
 
-func (h *CommentHandler) List(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+func (h *CommentHandler) List(ctx port.Context) {
+	page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(ctx.DefaultQuery("limit", "10"))
 
-	result, err := h.list.Execute(c.Request.Context(), comment.ListCommentsInput{
-		PostID: c.Param("postID"),
+	result, err := h.list.Execute(ctx.Context(), comment.ListCommentsInput{
+		PostID: ctx.Param("postID"),
 		Page:   page,
 		Limit:  limit,
 	})
 	if err != nil {
-		common.Error(c, err)
+		common.Error(ctx, err)
 		return
 	}
 
@@ -93,7 +93,7 @@ func (h *CommentHandler) List(c *gin.Context) {
 		items = append(items, dto.ToCommentResponse(item))
 	}
 
-	common.OK(c, dto.PaginatedResponse[dto.CommentResponse]{
+	common.OK(ctx, dto.PaginatedResponse[dto.CommentResponse]{
 		Items: items,
 		Meta:  dto.PageMeta{Page: result.Page, Limit: result.Limit, Total: result.Total},
 	})
